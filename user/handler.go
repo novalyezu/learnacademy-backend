@@ -3,9 +3,8 @@ package user
 import (
 	"net/http"
 
-	"github.com/novalyezu/learnacademy-backend/helper"
-
 	"github.com/gin-gonic/gin"
+	"github.com/novalyezu/learnacademy-backend/helper"
 )
 
 type UserHandler struct {
@@ -72,4 +71,12 @@ func (h *UserHandler) Login(c *gin.Context) {
 	output := FormatToAuthOutput(user, tokenString)
 
 	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Login success!", output))
+}
+
+func (h *UserHandler) GetMe(c *gin.Context) {
+	currentUser := c.MustGet("currentUser").(User)
+
+	output := FormatToUserOutput(currentUser)
+
+	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Get me success!", output))
 }

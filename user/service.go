@@ -11,6 +11,7 @@ import (
 type UserService interface {
 	Register(input RegisterInput) (User, error)
 	Login(input LoginInput) (User, error)
+	GetById(id string) (User, error)
 }
 
 type userServiceImpl struct {
@@ -65,4 +66,12 @@ func (s *userServiceImpl) Login(input LoginInput) (User, error) {
 	}
 
 	return user, nil
+}
+
+func (s *userServiceImpl) GetById(id string) (User, error) {
+	rsUser, err := s.userRepository.FindById(id)
+	if err != nil {
+		return User{}, err
+	}
+	return rsUser, nil
 }
