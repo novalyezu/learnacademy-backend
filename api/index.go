@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"fmt"
@@ -12,18 +12,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
-	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func main() {
-	errEnv := godotenv.Load()
-	if errEnv != nil {
-		log.Fatal("Error loading .env file")
-	}
+// For Vercel Serverless Functions
 
-	app := gin.Default()
+var app *gin.Engine
+
+func init() {
+	app = gin.Default()
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Etc/UTC",
 		os.Getenv("POSTGRES_HOST"), os.Getenv("POSTGRES_USER"), os.Getenv("POSTGRES_PASSWORD"),
 		os.Getenv("POSTGRES_DATABASE"), os.Getenv("POSTGRES_PORT"))
@@ -36,14 +34,9 @@ func main() {
 		v.RegisterValidation("password", user.PasswordValidator)
 	}
 
-	app.GET("/", HealthCheck)
 	router.InitRouter(app, db)
-	app.Run()
 }
 
-func HealthCheck(c *gin.Context) {
-	c.JSON(http.StatusOK, map[string]any{
-		"status":  "OK",
-		"message": "Server is up and running",
-	})
+func Handler(w http.ResponseWriter, r *http.Request) {
+	app.ServeHTTP(w, r)
 }

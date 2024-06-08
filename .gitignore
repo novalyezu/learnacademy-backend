@@ -28,3 +28,6 @@ images
 
 # env
 .env
+.env.docker
+.env.prod
+.vercel

@@ -1,6 +1,8 @@
 package router
 
 import (
+	"net/http"
+
 	"github.com/novalyezu/learnacademy-backend/helper"
 	"github.com/novalyezu/learnacademy-backend/middleware"
 	"github.com/novalyezu/learnacademy-backend/user"
@@ -16,10 +18,19 @@ func InitRouter(app *gin.Engine, db *gorm.DB) {
 	authTokenService := helper.NewAuthTokenService()
 	authTokenMiddleware := middleware.NewAuthTokenMiddleware(authTokenService, userService)
 
-	apiV1 := app.Group("/v1")
+	app.GET("/api", HealthCheck)
+
+	apiV1 := app.Group("/api/v1")
 
 	apiV1.POST("/auth/register", userHandler.Register)
 	apiV1.POST("/auth/login", userHandler.Login)
 
 	apiV1.GET("/me", authTokenMiddleware.VerifyToken(), userHandler.GetMe)
+}
+
+func HealthCheck(c *gin.Context) {
+	c.JSON(http.StatusOK, map[string]any{
+		"status":  "OK",
+		"message": "Server is up and running",
+	})
 }

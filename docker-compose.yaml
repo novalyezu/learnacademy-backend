@@ -1,0 +1,47 @@
+version: "3.8"
+
+services:
+  app:
+    container_name: app
+    env_file:
+      - .env.docker
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - appvolume:/app
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgresdb_learnacademy:
+        condition: service_healthy
+    networks:
+      - learnacademynetwork
+
+  postgresdb_learnacademy:
+    container_name: postgresdb_learnacademy
+    image: postgres:16-alpine
+    env_file:
+      - .env.docker
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgresvolume:/pgdata
+      - ./init.sql:/docker-entrypoint-initdb.d/create-database-learnacademy.sql
+    ports:
+      - "5433:5432"
+    networks:
+      - learnacademynetwork
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  learnacademynetwork:
+
+volumes:
+  postgresvolume:
+  appvolume:
