@@ -2,9 +2,19 @@ package community
 
 import "gorm.io/gorm"
 
+type FindAllParams struct {
+	Limit         int
+	Offset        int
+	OrderBy       string
+	Condition     string
+	ConditionArgs []any
+}
+
 type CommunityRepository interface {
 	Save(community Community) (Community, error)
 	FindBySlug(slug string) (Community, error)
+	FindAll(params FindAllParams) ([]Community, error)
+	Count(condition string, conditionArgs []any) (int64, error)
 }
 
 type communityRepositoryImpl struct {
@@ -32,4 +42,31 @@ func (r *communityRepositoryImpl) FindBySlug(slug string) (Community, error) {
 		return community, err
 	}
 	return community, nil
+}
+
+func (r *communityRepositoryImpl) FindAll(params FindAllParams) ([]Community, error) {
+	var communities []Community
+
+	err := r.db.Where(params.Condition, params.ConditionArgs...).
+		Order(params.OrderBy).
+		Limit(params.Limit).
+		Offset(params.Offset).
+		Find(&communities).
+		Error
+	if err != nil {
+		return []Community{}, err
+	}
+
+	return communities, nil
+}
+
+func (r *communityRepositoryImpl) Count(condition string, conditionArgs []any) (int64, error) {
+	var count int64
+
+	err := r.db.Model(&Community{}).Where(condition, conditionArgs...).Count(&count).Error
+	if err != nil {
+		return count, err
+	}
+
+	return count, nil
 }

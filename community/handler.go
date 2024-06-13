@@ -30,7 +30,7 @@ func (h *CommunityHandler) CreateCommunity(c *gin.Context) {
 		return
 	}
 
-	currUser := c.MustGet("currentUser").(user.User)
+	currUser := c.MustGet("currentUser").(user.UserOutput)
 	input.UserID = currUser.ID
 	thumbnailFH, errBindFile := c.FormFile("thumbnail")
 	if errBindFile != nil {
@@ -61,7 +61,25 @@ func (h *CommunityHandler) CreateCommunity(c *gin.Context) {
 	}
 
 	newCommunity.User = currUser
-	output := FormatToCommunityOutput(newCommunity)
 
-	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Create community success", output))
+	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Create community success", newCommunity))
+}
+
+func (h *CommunityHandler) GetCommunities(c *gin.Context) {
+	var input GetCommunityInput
+
+	err := c.ShouldBindQuery(&input)
+	if err != nil {
+		errors := helper.ValidationErrorResponse(err)
+		c.JSON(http.StatusBadRequest, helper.WrapperResponse(http.StatusBadRequest, "BadRequest", "input validation errors", gin.H{"errors": errors}))
+		return
+	}
+
+	communities, errCreate := h.communityService.GetAll(input)
+	if errCreate != nil {
+		c.JSON(http.StatusInternalServerError, helper.WrapperResponse(http.StatusInternalServerError, "InternalServerError", errCreate.Error(), nil))
+		return
+	}
+
+	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Get communities success", communities))
 }
