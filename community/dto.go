@@ -16,11 +16,15 @@ type CreateCommunityInput struct {
 	UserID           string
 }
 
-type GetCommunityInput struct {
+type GetCommunitiesInput struct {
 	Page    int    `form:"page"`
 	Limit   int    `form:"limit"`
 	OrderBy string `form:"orderBy"`
 	Search  string `form:"search"`
+}
+
+type GetCommunityByIDInput struct {
+	ID string `uri:"id"`
 }
 
 type CommunityOutput struct {

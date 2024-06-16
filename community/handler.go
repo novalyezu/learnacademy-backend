@@ -25,8 +25,7 @@ func (h *CommunityHandler) CreateCommunity(c *gin.Context) {
 
 	err := c.ShouldBind(&input)
 	if err != nil {
-		errors := helper.ValidationErrorResponse(err)
-		c.JSON(http.StatusBadRequest, helper.WrapperResponse(http.StatusBadRequest, "BadRequest", "input validation errors", gin.H{"errors": errors}))
+		helper.ErrorHandler(c, err)
 		return
 	}
 
@@ -34,29 +33,33 @@ func (h *CommunityHandler) CreateCommunity(c *gin.Context) {
 	input.UserID = currUser.ID
 	thumbnailFH, errBindFile := c.FormFile("thumbnail")
 	if errBindFile != nil {
-		c.JSON(http.StatusBadRequest, helper.WrapperResponse(http.StatusBadRequest, "BadRequest", "thumbnail required", nil))
+		helper.ErrorHandler(c, helper.NewBadRequestError("thumbnail required"))
 		return
 	}
 	errValidateFile := h.fileService.ValidateImage(c, thumbnailFH, "thumbnail", 1_000_000)
 	if errValidateFile != nil {
-		c.JSON(http.StatusBadRequest, helper.WrapperResponse(http.StatusBadRequest, "BadRequest", errValidateFile.Error(), nil))
+		helper.ErrorHandler(c, errValidateFile)
 		return
 	}
-	thumbnailFile := h.fileService.OpenFormFile(c, thumbnailFH)
+	thumbnailFile, errOpenFile := h.fileService.OpenFormFile(c, thumbnailFH)
+	if errOpenFile != nil {
+		helper.ErrorHandler(c, errOpenFile)
+		return
+	}
 
 	thumbnailUrl, errUpload := h.fileService.Upload(helper.UploadParams{
 		File: thumbnailFile,
 		Dest: "/community",
 	})
 	if errUpload != nil {
-		c.JSON(http.StatusInternalServerError, helper.WrapperResponse(http.StatusInternalServerError, "InternalServerError", errUpload.Error(), nil))
+		helper.ErrorHandler(c, errUpload)
 		return
 	}
 
 	input.Thumbnail = thumbnailUrl
 	newCommunity, errCreate := h.communityService.Create(input)
 	if errCreate != nil {
-		c.JSON(http.StatusInternalServerError, helper.WrapperResponse(http.StatusInternalServerError, "InternalServerError", errCreate.Error(), nil))
+		helper.ErrorHandler(c, errCreate)
 		return
 	}
 
@@ -66,20 +69,37 @@ func (h *CommunityHandler) CreateCommunity(c *gin.Context) {
 }
 
 func (h *CommunityHandler) GetCommunities(c *gin.Context) {
-	var input GetCommunityInput
+	var input GetCommunitiesInput
 
 	err := c.ShouldBindQuery(&input)
 	if err != nil {
-		errors := helper.ValidationErrorResponse(err)
-		c.JSON(http.StatusBadRequest, helper.WrapperResponse(http.StatusBadRequest, "BadRequest", "input validation errors", gin.H{"errors": errors}))
+		helper.ErrorHandler(c, err)
 		return
 	}
 
-	communities, errCreate := h.communityService.GetAll(input)
-	if errCreate != nil {
-		c.JSON(http.StatusInternalServerError, helper.WrapperResponse(http.StatusInternalServerError, "InternalServerError", errCreate.Error(), nil))
+	communities, errGet := h.communityService.GetAll(input)
+	if errGet != nil {
+		helper.ErrorHandler(c, errGet)
 		return
 	}
 
 	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Get communities success", communities))
+}
+
+func (h *CommunityHandler) GetCommunityByID(c *gin.Context) {
+	var input GetCommunityByIDInput
+
+	err := c.ShouldBindUri(&input)
+	if err != nil {
+		helper.ErrorHandler(c, err)
+		return
+	}
+
+	community, errGet := h.communityService.GetByID(input.ID)
+	if errGet != nil {
+		helper.ErrorHandler(c, errGet)
+		return
+	}
+
+	c.JSON(http.StatusOK, helper.WrapperResponse(http.StatusOK, "OK", "Get community success", community))
 }

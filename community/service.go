@@ -12,7 +12,8 @@ import (
 
 type CommunityService interface {
 	Create(input CreateCommunityInput) (CommunityDetailOutput, error)
-	GetAll(input GetCommunityInput) (CommunitiesOutput, error)
+	GetAll(input GetCommunitiesInput) (CommunitiesOutput, error)
+	GetByID(ID string) (CommunityDetailOutput, error)
 }
 
 type communityServiceImpl struct {
@@ -53,7 +54,7 @@ func (s *communityServiceImpl) Create(input CreateCommunityInput) (CommunityDeta
 	return communityOutput, nil
 }
 
-func (s *communityServiceImpl) GetAll(input GetCommunityInput) (CommunitiesOutput, error) {
+func (s *communityServiceImpl) GetAll(input GetCommunitiesInput) (CommunitiesOutput, error) {
 	page := helper.Ternary(input.Page < 1, 1, input.Page).(int)
 	limit := helper.Ternary(input.Limit < 1, 10, input.Limit).(int)
 	orderBy := helper.Ternary(input.OrderBy == "", "created_at__desc", input.OrderBy).(string)
@@ -103,4 +104,15 @@ func (s *communityServiceImpl) GetAll(input GetCommunityInput) (CommunitiesOutpu
 			TotalPage:   int(totalPage),
 		},
 	}, nil
+}
+
+func (s *communityServiceImpl) GetByID(ID string) (CommunityDetailOutput, error) {
+	community, err := s.communityRepository.FindByID(ID)
+	if err != nil {
+		return CommunityDetailOutput{}, helper.NewNotFoundError("community not found")
+	}
+
+	communityOutput := FormatToCommunityDetailOutput(community)
+
+	return communityOutput, nil
 }

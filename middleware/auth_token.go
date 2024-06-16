@@ -58,6 +58,8 @@ func (m *authTokenMiddleware) VerifyToken() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("currentUser", rsUser)
+		userOutput := user.FormatToUserOutput(rsUser)
+
+		c.Set("currentUser", userOutput)
 	}
 }

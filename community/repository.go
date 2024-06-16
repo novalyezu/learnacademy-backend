@@ -13,6 +13,7 @@ type FindAllParams struct {
 type CommunityRepository interface {
 	Save(community Community) (Community, error)
 	FindBySlug(slug string) (Community, error)
+	FindByID(id string) (Community, error)
 	FindAll(params FindAllParams) ([]Community, error)
 	Count(condition string, conditionArgs []any) (int64, error)
 }
@@ -38,6 +39,15 @@ func (r *communityRepositoryImpl) Save(community Community) (Community, error) {
 func (r *communityRepositoryImpl) FindBySlug(slug string) (Community, error) {
 	var community Community
 	err := r.db.Where("slug = ?", slug).First(&community).Error
+	if err != nil {
+		return community, err
+	}
+	return community, nil
+}
+
+func (r *communityRepositoryImpl) FindByID(ID string) (Community, error) {
+	var community Community
+	err := r.db.Where("id = ?", ID).Preload("User").First(&community).Error
 	if err != nil {
 		return community, err
 	}

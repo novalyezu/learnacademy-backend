@@ -35,6 +35,7 @@ func InitRouter(app *gin.Engine, db *gorm.DB) {
 	apiV1.GET("/me", authTokenMiddleware.VerifyToken(), userHandler.GetMe)
 
 	apiV1.GET("/communities", authTokenMiddleware.VerifyToken(), communityHandler.GetCommunities)
+	apiV1.GET("/communities/:id", authTokenMiddleware.VerifyToken(), communityHandler.GetCommunityByID)
 	apiV1.POST("/communities", authTokenMiddleware.VerifyToken(), communityHandler.CreateCommunity)
 }
 

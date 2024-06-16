@@ -1,8 +1,6 @@
 package user
 
 import (
-	"errors"
-
 	"github.com/novalyezu/learnacademy-backend/helper"
 
 	"golang.org/x/crypto/bcrypt"
@@ -54,7 +52,7 @@ func (s *userServiceImpl) Register(input RegisterInput) (User, error) {
 func (s *userServiceImpl) Login(input LoginInput) (User, error) {
 	user, err := s.userRepository.FindByEmail(input.Email)
 	if user.ID == "" {
-		return User{}, errors.New("email or password is wrong")
+		return User{}, helper.NewUnauthorizedError("email or password is wrong")
 	}
 	if err != nil {
 		return User{}, err
@@ -62,7 +60,7 @@ func (s *userServiceImpl) Login(input LoginInput) (User, error) {
 
 	errComparePassword := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 	if errComparePassword != nil {
-		return User{}, errors.New("email or password is wrong")
+		return User{}, helper.NewUnauthorizedError("email or password is wrong")
 	}
 
 	return user, nil

@@ -2,11 +2,9 @@ package helper
 
 import (
 	"context"
-	"errors"
 	"io"
 	"log"
 	"mime/multipart"
-	"net/http"
 	"os"
 	"slices"
 	"strconv"
@@ -24,7 +22,7 @@ type UploadParams struct {
 
 type FileService interface {
 	Upload(params UploadParams) (string, error)
-	OpenFormFile(c *gin.Context, fh *multipart.FileHeader) multipart.File
+	OpenFormFile(c *gin.Context, fh *multipart.FileHeader) (multipart.File, error)
 	ValidateImage(c *gin.Context, fh *multipart.FileHeader, field string, maxSize int64) error
 }
 
@@ -67,14 +65,13 @@ func (s *fileService) Upload(params UploadParams) (string, error) {
 	return url, nil
 }
 
-func (s *fileService) OpenFormFile(c *gin.Context, fh *multipart.FileHeader) multipart.File {
+func (s *fileService) OpenFormFile(c *gin.Context, fh *multipart.FileHeader) (multipart.File, error) {
 	file, errOpen := fh.Open()
 	if errOpen != nil {
-		c.JSON(http.StatusInternalServerError, WrapperResponse(http.StatusInternalServerError, "InternalServerError", errOpen.Error(), nil))
-		return nil
+		return nil, errOpen
 	}
 	defer file.Close()
-	return file
+	return file, nil
 }
 
 func (s *fileService) ValidateImage(c *gin.Context, fh *multipart.FileHeader, field string, maxSize int64) error {
@@ -84,12 +81,12 @@ func (s *fileService) ValidateImage(c *gin.Context, fh *multipart.FileHeader, fi
 
 	errorTypeMsg := field + " type allowed: " + strings.Join(allowedType, ",")
 	if !slices.Contains(allowedType, fileType) {
-		return errors.New(errorTypeMsg)
+		return NewBadRequestError(errorTypeMsg)
 	}
 
 	errorMaxSizeMsg := field + " max size is " + strconv.Itoa(int(maxSize)) + " bytes"
 	if fileSize > maxSize {
-		return errors.New(errorMaxSizeMsg)
+		return NewBadRequestError(errorMaxSizeMsg)
 	}
 
 	return nil
